@@ -19,6 +19,7 @@ namespace Mastermind {
     class Program {
         static void Main() {
             InitialiseBoard();
+            GenerateCode();
             Console.Title = "Mastermind";
             bool flashControl = false;
             do {
@@ -59,6 +60,9 @@ namespace Mastermind {
                 Console.WriteLine("3. Quit game   ");
                 Console.WriteLine("---------------");
                 Console.WriteLine();
+                if (debugMode) {
+                    DebugModeInfo();
+                }
                 Console.WriteLine("Please enter your menu choice:");
                 System.Threading.Thread.Sleep(100);
                 string userInput = Console.ReadLine();
@@ -88,10 +92,32 @@ namespace Mastermind {
                     }
                 }
                 else {
-                    if (userInput == "ACTIVATE_DEBUG" || userInput == "debug") {
-                        inputValid = true;
+                    if (userInput == "ACTIVATE_DEBUG") {
                         debugMode = true;
                         Console.Clear();
+                        Console.ForegroundColor = ConsoleColor.Yellow;
+                        Console.Write("Debug: ");
+                        Console.ForegroundColor = ConsoleColor.Green;
+                        Console.Write("ACTIVE");
+                        Console.WriteLine();
+                        Console.ForegroundColor = ConsoleColor.White;
+                        System.Threading.Thread.Sleep(500);
+                    }
+                    else if (userInput == "DEACTIVATE_DEBUG") {
+                        debugMode = false;
+                        Console.Clear();
+                        Console.ForegroundColor = ConsoleColor.Yellow;
+                        Console.Write("Debug: ");
+                        Console.ForegroundColor = ConsoleColor.Red;
+                        Console.Write("DISABLED");
+                        Console.WriteLine();
+                        Console.ForegroundColor = ConsoleColor.White;
+                        System.Threading.Thread.Sleep(500);
+                    }
+                    else if (userInput == "PLAY_WITH_DEBUG") {
+                        inputValid = true;
+                        debugMode = true;
+                        Console.ForegroundColor = ConsoleColor.Yellow;
                         Console.Write("Debug: ");
                         Console.ForegroundColor = ConsoleColor.Green;
                         Console.Write("ACTIVE");
@@ -100,22 +126,20 @@ namespace Mastermind {
                         System.Threading.Thread.Sleep(500);
                         PlayGame(debugMode);
                     }
-                    else if (userInput == "DEACTIVATE_DEBUG") {
-                        debugMode = false;
+                    else if ( debugMode && userInput == "GENERATE_NEW_CODE") {
                         Console.Clear();
-                        Console.Write("Debug: ");
-                        Console.ForegroundColor = ConsoleColor.Red;
-                        Console.Write("DISABLED");
-                        Console.WriteLine();
+                        Console.ForegroundColor = ConsoleColor.Yellow;
+                        Console.Write("Debug: GENERATING NEW CODE");
                         Console.ForegroundColor = ConsoleColor.White;
                         System.Threading.Thread.Sleep(500);
+                        GenerateCode();
                     }
                     else {
                         Console.Clear();
                         Console.ForegroundColor = ConsoleColor.Red;
                         Console.Write("Error: ");
                         Console.ForegroundColor = ConsoleColor.White;
-                        Console.Write("Please enter a number");
+                        Console.Write("Please enter a number.");
                         Console.WriteLine();
                         System.Threading.Thread.Sleep(1500);
                     }
@@ -153,7 +177,6 @@ namespace Mastermind {
         public static void PlayGame(bool debugMode) {
             bool gameWon = false;
             bool gameOver = false;
-            GenerateCode();
             do {
                 if (GlobalVars.turnNumber == 11) {
                     gameOver = true;
@@ -234,9 +257,10 @@ namespace Mastermind {
 
         public static void DebugModeInfo() {
             Console.ForegroundColor = ConsoleColor.Yellow;
-            Console.WriteLine("Answer: | {0} {1} {2} {3} |", GlobalVars.codeToBreak[0], GlobalVars.codeToBreak[1], GlobalVars.codeToBreak[2], GlobalVars.codeToBreak[3]);
             Console.WriteLine();
-            Console.WriteLine("Turn Number: {0}", GlobalVars.turnNumber);
+            Console.WriteLine("Answer: {0} {1} {2} {3} ", GlobalVars.codeToBreak[0], GlobalVars.codeToBreak[1], GlobalVars.codeToBreak[2], GlobalVars.codeToBreak[3]);
+            Console.WriteLine();
+            Console.WriteLine("Turn Number: {0} ({1})", GlobalVars.turnNumber + 1, GlobalVars.turnNumber);
             Console.ForegroundColor = ConsoleColor.White;
             Console.WriteLine();
         }
@@ -331,53 +355,28 @@ namespace Mastermind {
 
         public static void CalculateWhitePegs() {
             int whitePegCount = 3;
-            if (GlobalVars.usersCodeGuess[0] == GlobalVars.codeToBreak[1]) {
-                GlobalVars.gameBoard[GlobalVars.turnNumber, whitePegCount] = GlobalVars.whitePeg;
-                whitePegCount--;
-            }
-            else if (GlobalVars.usersCodeGuess[0] == GlobalVars.codeToBreak[2]) {
-                GlobalVars.gameBoard[GlobalVars.turnNumber, whitePegCount] = GlobalVars.whitePeg;
-                whitePegCount--;
-            }
-            else if (GlobalVars.usersCodeGuess[0] == GlobalVars.codeToBreak[3]) {
-                GlobalVars.gameBoard[GlobalVars.turnNumber, whitePegCount] = GlobalVars.whitePeg;
-                whitePegCount--;
-            }
-            if (GlobalVars.usersCodeGuess[1] == GlobalVars.codeToBreak[0]) {
-                GlobalVars.gameBoard[GlobalVars.turnNumber, whitePegCount] = GlobalVars.whitePeg;
-                whitePegCount--;
-            }
-            else if (GlobalVars.usersCodeGuess[1] == GlobalVars.codeToBreak[2]) {
-                GlobalVars.gameBoard[GlobalVars.turnNumber, whitePegCount] = GlobalVars.whitePeg;
-                whitePegCount--;
-            }
-            else if (GlobalVars.usersCodeGuess[1] == GlobalVars.codeToBreak[3]) {
-                GlobalVars.gameBoard[GlobalVars.turnNumber, whitePegCount] = GlobalVars.whitePeg;
-                whitePegCount--;
-            }
-            if (GlobalVars.usersCodeGuess[2] == GlobalVars.codeToBreak[0]) {
-                GlobalVars.gameBoard[GlobalVars.turnNumber, whitePegCount] = GlobalVars.whitePeg;
-                whitePegCount--;
-            }
-            else if (GlobalVars.usersCodeGuess[2] == GlobalVars.codeToBreak[1]) {
-                GlobalVars.gameBoard[GlobalVars.turnNumber, whitePegCount] = GlobalVars.whitePeg;
-                whitePegCount--;
-            }
-            else if (GlobalVars.usersCodeGuess[2] == GlobalVars.codeToBreak[3]) {
-                GlobalVars.gameBoard[GlobalVars.turnNumber, whitePegCount] = GlobalVars.whitePeg;
-                whitePegCount--;
-            }
-            if (GlobalVars.usersCodeGuess[3] == GlobalVars.codeToBreak[0]) {
-                GlobalVars.gameBoard[GlobalVars.turnNumber, whitePegCount] = GlobalVars.whitePeg;
-                whitePegCount--;
-            }
-            else if (GlobalVars.usersCodeGuess[3] == GlobalVars.codeToBreak[1]) {
-                GlobalVars.gameBoard[GlobalVars.turnNumber, whitePegCount] = GlobalVars.whitePeg;
-                whitePegCount--;
-            }
-            else if (GlobalVars.usersCodeGuess[3] == GlobalVars.codeToBreak[2]) {
-                GlobalVars.gameBoard[GlobalVars.turnNumber, whitePegCount] = GlobalVars.whitePeg;
-                whitePegCount--;
+            for (int i = 0; i < 3; i++) {
+                if (GlobalVars.usersCodeGuess[i] == GlobalVars.codeToBreak[0]) {
+                    
+                }
+                else if (GlobalVars.usersCodeGuess[i] == GlobalVars.codeToBreak[1]) {
+                    if (i != 1) {
+                        GlobalVars.gameBoard[GlobalVars.turnNumber, whitePegCount] = GlobalVars.whitePeg;
+                        whitePegCount--;
+                    }
+                }
+                else if (GlobalVars.usersCodeGuess[i] == GlobalVars.codeToBreak[2]) {
+                    if (i != 2) {
+                        GlobalVars.gameBoard[GlobalVars.turnNumber, whitePegCount] = GlobalVars.whitePeg;
+                        whitePegCount--;
+                    }
+                }
+                else if (GlobalVars.usersCodeGuess[i] == GlobalVars.codeToBreak[3]) {
+                    if (i != 3) {
+                        GlobalVars.gameBoard[GlobalVars.turnNumber, whitePegCount] = GlobalVars.whitePeg;
+                        whitePegCount--;
+                    }
+                }
             }
         }
 
