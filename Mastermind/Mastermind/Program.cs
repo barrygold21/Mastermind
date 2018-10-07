@@ -126,7 +126,7 @@ namespace Mastermind {
                         System.Threading.Thread.Sleep(500);
                         PlayGame(debugMode);
                     }
-                    else if ( debugMode && userInput == "GENERATE_NEW_CODE") {
+                    else if (debugMode && userInput == "GENERATE_NEW_CODE") {
                         Console.Clear();
                         Console.ForegroundColor = ConsoleColor.Yellow;
                         Console.Write("Debug: GENERATING NEW CODE");
