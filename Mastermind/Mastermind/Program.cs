@@ -164,9 +164,6 @@ namespace Mastermind {
             Console.WriteLine("This is what the board looks like at the start of the game:");
             Console.WriteLine();
             DrawBoard();
-            if (debugMode) {
-                DebugModeInfo();
-            }
             Console.WriteLine();
             Console.WriteLine("That's everything you need to know! Have fun!");
             Console.WriteLine();
@@ -199,10 +196,10 @@ namespace Mastermind {
                 }
             } while (!gameWon | !gameOver);
             if (gameWon == true) {
-                YouWin();
+                YouWin(debugMode);
             }
             else if (gameOver == true) {
-                YouLose();
+                YouLose(debugMode);
             }
         }
 
@@ -268,7 +265,7 @@ namespace Mastermind {
         public static void EnterNextGuess(bool debugMode) {
             bool[] inputValid = new bool[4];
             do {
-                for (int i = 0; i < 3; i++) {
+                for (int i = 0; i < 4; i++) {
                     inputValid[i] = false;
                 }
                 string userInput;
@@ -283,14 +280,14 @@ namespace Mastermind {
                             inputValid[i] = true;
                         }
                         else {
-                            for (int j = 0; j < 3; j++) {
+                            for (int j = 0; j < 4; j++) {
                                 inputValid[j] = false;
                             }
                             PleaseEnterValidNumber(debugMode);
                         }
                     }
                     else {
-                        for (int j = 0; j < 3; j++) {
+                        for (int j = 0; j < 4; j++) {
                             inputValid[j] = false;
                         }
                         PleaseEnterNumber(debugMode);
@@ -355,9 +352,10 @@ namespace Mastermind {
 
         public static void CalculateWhitePegs() {
             int whitePegCount = 3;
-            for (int i = 0; i < 3; i++) {
+            for (int i = 0; i < 4; i++) {
                 if (GlobalVars.usersCodeGuess[i] == GlobalVars.codeToBreak[0]) {
-                    
+                    GlobalVars.gameBoard[GlobalVars.turnNumber, whitePegCount] = GlobalVars.whitePeg;
+                    whitePegCount--;
                 }
                 else if (GlobalVars.usersCodeGuess[i] == GlobalVars.codeToBreak[1]) {
                     if (i != 1) {
@@ -380,10 +378,14 @@ namespace Mastermind {
             }
         }
 
-        public static void YouWin() {
+        public static void YouWin(bool debugMode) {
             bool userPlayAgain = false;
             do {
                 Console.Clear();
+                DrawBoard();
+                if (debugMode) {
+                    DebugModeInfo();
+                }
                 Console.WriteLine();
                 Console.WriteLine("Congratulations! You win.");
                 Console.WriteLine();
@@ -409,10 +411,14 @@ namespace Mastermind {
             } while (userPlayAgain == false);
         }
 
-        public static void YouLose() {
+        public static void YouLose(bool debugMode) {
             bool userPlayAgain = false;
             do {
                 Console.Clear();
+                DrawBoard();
+                if (debugMode) {
+                    DebugModeInfo();
+                }
                 Console.WriteLine();
                 Console.WriteLine("Ouch! Seems like you didn't win this time around.");
                 Console.WriteLine("Better luck next time!");
