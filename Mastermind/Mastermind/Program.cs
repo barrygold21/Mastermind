@@ -1,25 +1,25 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using Mastermind.Properties;
 
 namespace Mastermind {
-    public class GlobalVars {
-        public static int turnNumber = 0;
-        public static int boardX = 14;
-        public static int boardY = 11;
-        public static string[,] gameBoard = new string[boardY, boardX];
-        public static int[] usersCodeGuess = new int[4];
-        public static int[] codeToBreak = new int[4];
-        public static readonly string redPeg = "R";
-        public static readonly string whitePeg = "W";
-        public static bool difficultyUnlocked = false;
-        public static int difficultySelected = 6;
+    public class Variables {
+        public int turnNumber = 0;
+        public static readonly int BoardY = 14;
+        public static readonly int BoardX = 11;
+        public string[,] gameBoard = new string[BoardX, BoardY];
+        public int[] usersCodeGuess = new int[4];
+        public int[] codeToBreak = new int[4];
+        public readonly string redPeg = "R";
+        public readonly string whitePeg = "W";
+        public bool difficultyUnlocked;
+        public int difficultySelected = 6;
     }
 
-    class Program {
-        static void Main() {
+    class Program : Variables {
+
+        void Main() {
+            Program p = new Program();
+            difficultyUnlocked = IsDifficultyUnlocked();
             InitialiseBoard();
             GenerateCode();
             Console.Title = "Mastermind";
@@ -45,10 +45,119 @@ namespace Mastermind {
                 flashControl = !flashControl;
             } while (!Console.KeyAvailable);
             Console.ReadKey();
-            MainMenu();
+            p.MainMenu();
         }
 
-        public static void MainMenu() {
+        bool UnlockDifficulty() {
+            Settings.Default["DifficultyUnlocked"] = true;
+            Settings.Default.Save();
+            return true;
+        }
+
+        bool LockDifficulty() {
+            Settings.Default["DifficultyUnlocked"] = false;
+            Settings.Default.Save();
+            return false;
+        }
+
+        static bool IsDifficultyUnlocked() {
+            switch (Settings.Default["DifficultyUnlocked"]) {
+                case true:
+                    return true;
+                default:
+                    return false;
+            }
+        }
+
+        bool Error(int code) {
+            Console.Clear();
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.Write("Error: ");
+            Console.ForegroundColor = ConsoleColor.White;
+            switch (code) {
+                case 1:
+                    Console.Write("Valid choice not entered. Please enter a number between 1 and 4.");
+                    break;
+                case 2:
+                    Console.Write("Please enter a number.");
+                    break;
+                case 3:
+                    Console.Write("Please enter debug mode first.");
+                    break;
+                case 4:
+                    Console.Write("Debug code not recognised. Debug mode disabled");
+                    break;
+                case 5:
+                    Console.Write("Difficulty selection not unlocked. Beat the game once to unlock it!");
+                    break;
+                case 6:
+                    Console.Write("Valid digit not entered. Please enter a digit between 1 and {0}.", difficultySelected);
+                    break;
+                default:
+                    Console.Write("Error code not found");
+                    break;
+            }
+            Console.WriteLine();
+            if (code == 3) {
+                Console.WriteLine("Since you know about the command, I've gone ahead and done that for you.");
+                System.Threading.Thread.Sleep(500);
+                Console.Clear();
+                return true;
+            }
+            else {
+                System.Threading.Thread.Sleep(1000);
+                Console.Clear();
+                return false;
+            }
+        }
+
+        bool DebugSettings(string code, bool debugMode) {
+            Console.Clear();
+            Console.ForegroundColor = ConsoleColor.Cyan;
+            Console.Write("Debug: ");
+            switch (code) {
+                case "debug.Activate":
+                    Console.ForegroundColor = ConsoleColor.Green;
+                    Console.Write("ACTIVE");
+                    debugMode = true;
+                    break;
+                case "debug.Deactivate":
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.Write("DISABLED");
+                    debugMode = true;
+                    break;
+                case "debug.NewCode":
+                    if (debugMode) {
+                        Console.ForegroundColor = ConsoleColor.Cyan;
+                        Console.Write("GENERATING NEW CODE");
+                        GenerateCode();
+                    }
+                    else { debugMode = Error(3); }
+                    break;
+                case "debug.UnlockDifficulty":
+                    if (debugMode) {
+                        difficultyUnlocked = UnlockDifficulty(); ;
+                        Console.Write("DIFFICULTY UNLOCKED");
+                    }
+                    else { debugMode = Error(3); }
+                    break;
+                case "debug.LockDifficulty":
+                    if (debugMode) {
+                        difficultyUnlocked = LockDifficulty(); ;
+                        Console.Write("DIFFICULTY LOCKED");
+                    }
+                    else { debugMode = Error(3); }
+                    break;
+                default:
+                    Console.Clear();
+                    debugMode = Error(4);
+                    break;
+            }
+            System.Threading.Thread.Sleep(1500);
+            return debugMode;
+        }
+
+        void MainMenu() {
             int menuChoice = 0;
             bool debugMode = false;
             bool inputValid = false;
@@ -59,167 +168,70 @@ namespace Mastermind {
                 Console.WriteLine();
                 Console.WriteLine("-------------------------");
                 Console.WriteLine("1. Play        ");
-                if (!GlobalVars.difficultyUnlocked) {
+                if (!difficultyUnlocked) {
                     Console.ForegroundColor = ConsoleColor.DarkGray;
-                    Console.WriteLine("2. Change Difficulty ({0})", GlobalVars.difficultySelected);
+                    Console.WriteLine("2. Change Difficulty ({0})", difficultySelected);
                     Console.ForegroundColor = ConsoleColor.Yellow;
                 }
                 else {
-                    Console.WriteLine("2. Difficulty ({0})", GlobalVars.difficultySelected);
+                    Console.WriteLine("2. Difficulty ({0})", difficultySelected);
                 }
                 Console.WriteLine("3. How to play ");
                 Console.WriteLine("4. Quit game   ");
                 Console.WriteLine("-------------------------");
                 if (debugMode) {
-                    DebugModeInfo();
+                    DebugInfo();
                     Console.ForegroundColor = ConsoleColor.Cyan;
                     Console.WriteLine("All debug codes:");
-                    Console.WriteLine("ACTIVATE_DEBUG");
-                    Console.WriteLine("DEACTIVATE_DEBUG");
-                    Console.WriteLine("PLAY_WITH_DEBUG");
-                    Console.WriteLine("GENERATE_NEW_CODE");
-                    Console.WriteLine("UNLOCK_DIFFICULTY");
-                    Console.WriteLine();
+                    Console.WriteLine("debug.Activate");
+                    Console.WriteLine("debug.Deactivate");
+                    Console.WriteLine("debug.NewCode");
+                    Console.WriteLine("debug.UnlockDifficulty");
+                    Console.WriteLine("debug.LockDifficulty");
                     Console.ForegroundColor = ConsoleColor.White;
                 }
-                else {
-                    Console.WriteLine();
-                }
+                Console.WriteLine();
                 Console.ForegroundColor = ConsoleColor.White;
                 Console.WriteLine("Please enter your menu choice:");
                 System.Threading.Thread.Sleep(100);
                 string userInput = Console.ReadLine();
                 bool isNumeric = int.TryParse(userInput, out menuChoice);
                 if (isNumeric) {
-                    if (menuChoice == 1) {
-                        inputValid = true;
-                        PlayGame(debugMode);
-                    }
-                    else if (menuChoice == 2) {
-                        if (GlobalVars.difficultyUnlocked) {
-                            SelectDifficulty();
-                        }
-                        else {
+                    switch (menuChoice) {
+                        case 1:
+                            inputValid = true;
+                            PlayGame(debugMode);
+                            break;
+                        case 2:
+                            if (difficultyUnlocked) {
+                                SelectDifficulty();
+                            }
+                            else { Error(5); }
+                            break;
+                        case 3:
+                            HowToPlay(debugMode);
+                            break;
+                        case 4:
                             Console.Clear();
-                            Console.WriteLine();
-                            Console.Write("Difficulty selection not unlocked. Beat the game once to unlock it!");
-                            Console.WriteLine();
-                            System.Threading.Thread.Sleep(1500);
-                        }
-                    }
-                    else if (menuChoice == 3) {
-                        HowToPlay(debugMode);
-                    }
-                    else if (menuChoice == 4) {
-                        Console.Clear();
-                        Console.WriteLine("Mastermind will now close.");
-                        System.Threading.Thread.Sleep(1000);
-                        Environment.Exit(0);
-                    }
-                    else {
-                        Console.Clear();
-                        Console.ForegroundColor = ConsoleColor.Red;
-                        Console.Write("Error: ");
-                        Console.ForegroundColor = ConsoleColor.White;
-                        Console.Write("Valid choice not entered. Please enter a number between 1 and 3.");
-                        Console.WriteLine();
-                        System.Threading.Thread.Sleep(1500);
+                            Console.WriteLine("Mastermind will now close.");
+                            System.Threading.Thread.Sleep(1000);
+                            Environment.Exit(0);
+                            break;
+                        default:
+                            Error(1);
+                            break;
                     }
                 }
+                else if (userInput.StartsWith("debug.")) {
+                    debugMode = DebugSettings(userInput, debugMode);
+                }
                 else {
-                    if (userInput == "ACTIVATE_DEBUG") {
-                        debugMode = true;
-                        Console.Clear();
-                        Console.ForegroundColor = ConsoleColor.Cyan;
-                        Console.Write("Debug: ");
-                        Console.ForegroundColor = ConsoleColor.Green;
-                        Console.Write("ACTIVE");
-                        Console.WriteLine();
-                        Console.ForegroundColor = ConsoleColor.White;
-                        System.Threading.Thread.Sleep(500);
-                    }
-                    else if (userInput == "DEACTIVATE_DEBUG") {
-                        debugMode = false;
-                        Console.Clear();
-                        Console.ForegroundColor = ConsoleColor.Cyan;
-                        Console.Write("Debug: ");
-                        Console.ForegroundColor = ConsoleColor.Red;
-                        Console.Write("DISABLED");
-                        Console.WriteLine();
-                        Console.ForegroundColor = ConsoleColor.White;
-                        System.Threading.Thread.Sleep(500);
-                    }
-                    else if (userInput == "PLAY_WITH_DEBUG") {
-                        inputValid = true;
-                        debugMode = true;
-                        Console.ForegroundColor = ConsoleColor.Cyan;
-                        Console.Write("Debug: ");
-                        Console.ForegroundColor = ConsoleColor.Green;
-                        Console.Write("ACTIVE");
-                        Console.WriteLine();
-                        Console.ForegroundColor = ConsoleColor.White;
-                        System.Threading.Thread.Sleep(500);
-                        PlayGame(debugMode);
-                    }
-                    else if (userInput == "GENERATE_NEW_CODE") {
-                        if (debugMode) {
-                            Console.Clear();
-                            Console.ForegroundColor = ConsoleColor.Cyan;
-                            Console.Write("Debug: GENERATING NEW CODE");
-                            Console.ForegroundColor = ConsoleColor.White;
-                            System.Threading.Thread.Sleep(500);
-                            GenerateCode();
-                        }
-                        else {
-                            Console.Clear();
-                            Console.ForegroundColor = ConsoleColor.Red;
-                            Console.Write("Error: ");
-                            Console.ForegroundColor = ConsoleColor.White;
-                            Console.Write("Please enter debug mode first.");
-                            Console.WriteLine();
-                            Console.ForegroundColor = ConsoleColor.Cyan;
-                            Console.WriteLine("Since you know about the command, I've gone ahead and done that for you.");
-                            Console.ForegroundColor = ConsoleColor.White;
-                            debugMode = true;
-                            System.Threading.Thread.Sleep(2000);
-                        }
-                    }
-                    else if (userInput == "UNLOCK_DIFFICULTY") {
-                        if (debugMode) {
-                            GlobalVars.difficultyUnlocked = true;
-                            Console.Clear();
-                            Console.ForegroundColor = ConsoleColor.Cyan;
-                            Console.Write("Debug: DIFFICULTY UNLOCKED");
-                            Console.ForegroundColor = ConsoleColor.White;
-                            System.Threading.Thread.Sleep(500);
-                        }
-                        else {
-                            Console.Clear();
-                            Console.ForegroundColor = ConsoleColor.Red;
-                            Console.Write("Error: ");
-                            Console.ForegroundColor = ConsoleColor.White;
-                            Console.Write("Please enter debug mode first.");
-                            Console.WriteLine();
-                            Console.WriteLine("Since you know about the command, I've gone ahead and done that for you.");
-                            debugMode = true;
-                            System.Threading.Thread.Sleep(2000);
-                        }
-
-                    }
-                    else {
-                        Console.Clear();
-                        Console.ForegroundColor = ConsoleColor.Red;
-                        Console.Write("Error: ");
-                        Console.ForegroundColor = ConsoleColor.White;
-                        Console.Write("Please enter a number.");
-                        Console.WriteLine();
-                        System.Threading.Thread.Sleep(1500);
-                    }
+                    Error(2);
                 }
             } while (!inputValid);
         }
 
-        public static void SelectDifficulty() {
+        void SelectDifficulty() {
             string userInput;
             bool inputValid = false;
             do {
@@ -228,16 +240,16 @@ namespace Mastermind {
                 Console.WriteLine("This is only unlocked after you have beat the game once.");
                 Console.WriteLine("You can set a difficulty of 6, 7, 8 or 9 numbers");
                 Console.WriteLine("The default difficulty is 6 numbers.");
-                Console.WriteLine("The current difficulty is {0}", GlobalVars.difficultySelected);
+                Console.WriteLine("The current difficulty is {0}", difficultySelected);
                 Console.WriteLine("Please enter a new difficulty to use.");
                 Console.WriteLine("If you do not wish to change the difficulty, enter the current difficulty.");
                 Console.WriteLine();
                 Console.WriteLine("New difficulty:");
                 userInput = Console.ReadLine();
-                bool isNumeric = int.TryParse(userInput, out GlobalVars.difficultySelected);
+                bool isNumeric = int.TryParse(userInput, out difficultySelected);
                 if (isNumeric) {
-                    if (GlobalVars.difficultySelected >= 6 && GlobalVars.difficultySelected <= 9) {
-                        Console.WriteLine("Difficulty sucessfully set to {0}", GlobalVars.difficultySelected);
+                    if (difficultySelected >= 6 && difficultySelected <= 9) {
+                        Console.WriteLine("Difficulty sucessfully set to {0}", difficultySelected);
                         inputValid = true;
                     }
                     else {
@@ -248,7 +260,7 @@ namespace Mastermind {
                         Console.Write("Valid digit not entered.");
                         Console.WriteLine();
                         Console.WriteLine("Please enter a digit between 6 and 9. Selected difficulty has been set to 6.");
-                        GlobalVars.difficultySelected = 6;
+                        difficultySelected = 6;
                         System.Threading.Thread.Sleep(1500);
                     }
                 }
@@ -264,7 +276,7 @@ namespace Mastermind {
             } while (!inputValid);
         }
 
-        public static void HowToPlay(bool debugMode) {
+        void HowToPlay(bool debugMode) {
             Console.Clear();
             Console.WriteLine("How to play:");
             Console.WriteLine();
@@ -280,7 +292,7 @@ namespace Mastermind {
             Console.WriteLine();
             Console.WriteLine("This is what the board looks like at the start of the game:");
             Console.WriteLine();
-            DrawBoard();
+            DrawBoard(debugMode);
             Console.WriteLine();
             Console.WriteLine("That's everything you need to know! Have fun!");
             Console.WriteLine();
@@ -288,26 +300,23 @@ namespace Mastermind {
             Console.ReadKey();
         }
 
-        public static void PlayGame(bool debugMode) {
+        void PlayGame(bool debugMode) {
             bool gameWon = false;
             bool gameOver = false;
             do {
-                if (GlobalVars.turnNumber == 11) {
+                if (turnNumber == 11) {
                     gameOver = true;
                     break;
                 }
                 Console.Clear();
-                DrawBoard();
-                if (debugMode) {
-                    DebugModeInfo();
-                }
+                DrawBoard(debugMode);
                 Console.WriteLine();
                 EnterNextGuess(debugMode);
                 System.Threading.Thread.Sleep(1000);
                 AddGuessToBoard();
                 gameWon = CalculateRedPegs();
                 CalculateWhitePegs();
-                GlobalVars.turnNumber++;
+                turnNumber++;
                 if (gameWon) {
                     break;
                 }
@@ -320,40 +329,40 @@ namespace Mastermind {
             }
         }
 
-        public static void GenerateCode() {
+        void GenerateCode() {
             Random randomCodeNumber = new Random();
             for (int i = 0; i < 4; i++) {
-                GlobalVars.codeToBreak[i] = randomCodeNumber.Next(1, GlobalVars.difficultySelected + 1);
+                codeToBreak[i] = randomCodeNumber.Next(1, difficultySelected + 1);
             }
         }
 
-        public static void InitialiseBoard() {
-            for (int i = 0; i < GlobalVars.boardY; i++) {
-                for (int j = 0; j < GlobalVars.boardX; j++) {
+        void InitialiseBoard() {
+            for (int i = 0; i < BoardX; i++) {
+                for (int j = 0; j < BoardY; j++) {
                     if (j == 4 || j == 9) {
-                        GlobalVars.gameBoard[i, j] = "|";
+                        gameBoard[i, j] = "|";
                     }
                     else {
                         if (j > 9 || j < 4) {
-                            GlobalVars.gameBoard[i, j] = " ";
+                            gameBoard[i, j] = " ";
                         }
                         else {
-                            GlobalVars.gameBoard[i, j] = ".";
+                            gameBoard[i, j] = ".";
                         }
                     }
                 }
             }
         }
 
-        public static void DrawBoard() {
+        void DrawBoard(bool debugMode) {
             int i = 0;
-            foreach (var boardItem in GlobalVars.gameBoard) {
+            foreach (var boardItem in gameBoard) {
                 if (boardItem.Equals("R")) {
                     Console.ForegroundColor = ConsoleColor.Red;
                     Console.Write("{0} ", boardItem);
                     Console.ForegroundColor = ConsoleColor.White;
                     i++;
-                    if (i == GlobalVars.boardX) {
+                    if (i == BoardY) {
                         Console.WriteLine();
                         i = 0;
                     }
@@ -361,25 +370,26 @@ namespace Mastermind {
                 else {
                     Console.Write("{0} ", boardItem);
                     i++;
-                    if (i == GlobalVars.boardX) {
+                    if (i == BoardY) {
                         Console.WriteLine();
                         i = 0;
                     }
                 }
             }
+            if (debugMode) { DebugInfo(); }
         }
 
-        public static void DebugModeInfo() {
+        void DebugInfo() {
             Console.ForegroundColor = ConsoleColor.Cyan;
             Console.WriteLine();
-            Console.WriteLine("Answer: {0} {1} {2} {3} ", GlobalVars.codeToBreak[0], GlobalVars.codeToBreak[1], GlobalVars.codeToBreak[2], GlobalVars.codeToBreak[3]);
+            Console.WriteLine("Answer: {0} {1} {2} {3} ", codeToBreak[0], codeToBreak[1], codeToBreak[2], codeToBreak[3]);
             Console.WriteLine();
-            Console.WriteLine("Turn Number: {0} ({1})", GlobalVars.turnNumber + 1, GlobalVars.turnNumber);
+            Console.WriteLine("Turn Number: {0} ({1})", turnNumber + 1, turnNumber);
             Console.ForegroundColor = ConsoleColor.White;
             Console.WriteLine();
         }
 
-        public static void EnterNextGuess(bool debugMode) {
+        void EnterNextGuess(bool debugMode) {
             bool[] inputValid = new bool[4];
             do {
                 for (int i = 0; i < 4; i++) {
@@ -391,23 +401,25 @@ namespace Mastermind {
                 for (int i = 0; i < 4; i++) {
                     Console.Write("Digit {0}: ", i + 1);
                     userInput = Console.ReadLine();
-                    isNumeric = int.TryParse(userInput, out GlobalVars.usersCodeGuess[i]);
+                    isNumeric = int.TryParse(userInput, out usersCodeGuess[i]);
                     if (isNumeric) {
-                        if (GlobalVars.usersCodeGuess[i] >= 1 && GlobalVars.usersCodeGuess[i] <= GlobalVars.difficultySelected) {
+                        if (usersCodeGuess[i] >= 1 && usersCodeGuess[i] <= difficultySelected) {
                             inputValid[i] = true;
                         }
                         else {
                             for (int j = 0; j < 4; j++) {
                                 inputValid[j] = false;
                             }
-                            PleaseEnterValidNumber(debugMode);
+                            Error(6);
+                            DrawBoard(debugMode);
                         }
                     }
                     else {
                         for (int j = 0; j < 4; j++) {
                             inputValid[j] = false;
                         }
-                        PleaseEnterNumber(debugMode);
+                        Error(2);
+                        DrawBoard(debugMode);
                     }
                     if (!inputValid[i]) {
                         break;
@@ -416,48 +428,18 @@ namespace Mastermind {
             } while (!inputValid[0] && !inputValid[1] && !inputValid[2] && !inputValid[3]);
         }
 
-        public static void PleaseEnterNumber(bool debugMode) {
-            Console.Clear();
-            Console.ForegroundColor = ConsoleColor.Red;
-            Console.Write("Error: ");
-            Console.ForegroundColor = ConsoleColor.White;
-            Console.Write("Please enter a number.");
-            Console.WriteLine();
-            System.Threading.Thread.Sleep(1500);
-            Console.Clear();
-            DrawBoard();
-            if (debugMode) {
-                DebugModeInfo();
-            }
-        }
-
-        public static void PleaseEnterValidNumber(bool debugMode) {
-            Console.Clear();
-            Console.ForegroundColor = ConsoleColor.Red;
-            Console.Write("Error: ");
-            Console.ForegroundColor = ConsoleColor.White;
-            Console.Write("Valid digit not entered. Please enter a digit between 1 and {0}.", GlobalVars.difficultySelected);
-            Console.WriteLine();
-            System.Threading.Thread.Sleep(1500);
-            Console.Clear();
-            DrawBoard();
-            if (debugMode) {
-                DebugModeInfo();
-            }
-        }
-
-        public static void AddGuessToBoard() {
+        void AddGuessToBoard() {
             for (int i = 0; i < 4; i++) {
-                GlobalVars.gameBoard[GlobalVars.turnNumber, i + 5] = Convert.ToString(GlobalVars.usersCodeGuess[i]);
+                gameBoard[turnNumber, i + 5] = Convert.ToString(usersCodeGuess[i]);
             }
         }
 
-        public static bool CalculateRedPegs() {
+        bool CalculateRedPegs() {
             bool gameWon = false;
             int redPegCount = 0;
             for (int i = 0; i < 4; i++) {
-                if (GlobalVars.usersCodeGuess[i] == GlobalVars.codeToBreak[i]) {
-                    GlobalVars.gameBoard[GlobalVars.turnNumber, redPegCount + 10] = GlobalVars.redPeg;
+                if (usersCodeGuess[i] == codeToBreak[i]) {
+                    gameBoard[turnNumber, redPegCount + 10] = redPeg;
                     redPegCount++;
                 }
             }
@@ -467,49 +449,47 @@ namespace Mastermind {
             return gameWon;
         }
 
-        public static void CalculateWhitePegs() {
+        void CalculateWhitePegs() {
             int whitePegCount = 3;
             for (int i = 0; i < 4; i++) {
-                if (GlobalVars.usersCodeGuess[i] == GlobalVars.codeToBreak[0]) {
-                    GlobalVars.gameBoard[GlobalVars.turnNumber, whitePegCount] = GlobalVars.whitePeg;
+                if (usersCodeGuess[i] == codeToBreak[0]) {
+                    gameBoard[turnNumber, whitePegCount] = whitePeg;
                     whitePegCount--;
                 }
-                else if (GlobalVars.usersCodeGuess[i] == GlobalVars.codeToBreak[1]) {
+                else if (usersCodeGuess[i] == codeToBreak[1]) {
                     if (i != 1) {
-                        GlobalVars.gameBoard[GlobalVars.turnNumber, whitePegCount] = GlobalVars.whitePeg;
+                        gameBoard[turnNumber, whitePegCount] = whitePeg;
                         whitePegCount--;
                     }
                 }
-                else if (GlobalVars.usersCodeGuess[i] == GlobalVars.codeToBreak[2]) {
+                else if (usersCodeGuess[i] == codeToBreak[2]) {
                     if (i != 2) {
-                        GlobalVars.gameBoard[GlobalVars.turnNumber, whitePegCount] = GlobalVars.whitePeg;
+                        gameBoard[turnNumber, whitePegCount] = whitePeg;
                         whitePegCount--;
                     }
                 }
-                else if (GlobalVars.usersCodeGuess[i] == GlobalVars.codeToBreak[3]) {
+                else if (usersCodeGuess[i] == codeToBreak[3]) {
                     if (i != 3) {
-                        GlobalVars.gameBoard[GlobalVars.turnNumber, whitePegCount] = GlobalVars.whitePeg;
+                        gameBoard[turnNumber, whitePegCount] = whitePeg;
                         whitePegCount--;
                     }
                 }
             }
         }
 
-        public static void YouWin(bool debugMode) {
+        void YouWin(bool debugMode) {
             bool userPlayAgain = false;
             do {
                 Console.Clear();
-                DrawBoard();
-                if (debugMode) {
-                    DebugModeInfo();
-                }
+                DrawBoard(debugMode);
                 Console.WriteLine();
                 Console.WriteLine("Congratulations! You win.");
-                if (!GlobalVars.difficultyUnlocked) {
-                    Console.WriteLine("Difficulty slection unlocked!");
-                    Console.WriteLine("You can now change your difficulty in the main menu.");
-                    GlobalVars.difficultyUnlocked = true;
-                    Console.WriteLine("Keep in mind if you quit the game, you will have to unlock it again!");
+                if (!difficultyUnlocked) {
+                    UnlockDifficulty();
+                    Console.Clear();
+                    Console.WriteLine("Difficulty Modifications Unlocked!");
+                    Console.WriteLine("You can now change the difficulty in the main menu.");
+                    System.Threading.Thread.Sleep(1000);
                 }
                 Console.WriteLine();
                 Console.WriteLine("Would you like to play again? (Y/N)");
@@ -534,19 +514,16 @@ namespace Mastermind {
             } while (userPlayAgain == false);
         }
 
-        public static void YouLose(bool debugMode) {
+        void YouLose(bool debugMode) {
             bool userPlayAgain = false;
             do {
                 Console.Clear();
-                DrawBoard();
-                if (debugMode) {
-                    DebugModeInfo();
-                }
+                DrawBoard(debugMode);
                 Console.WriteLine();
                 Console.WriteLine("Ouch! Seems like you didn't win this time around.");
                 Console.WriteLine("Better luck next time!");
                 Console.WriteLine("The code was:");
-                Console.WriteLine("{0} {1} {2} {3}", GlobalVars.codeToBreak[0], GlobalVars.codeToBreak[1], GlobalVars.codeToBreak[2], GlobalVars.codeToBreak[3]);
+                Console.WriteLine("{0} {1} {2} {3}", codeToBreak[0], codeToBreak[1], codeToBreak[2], codeToBreak[3]);
                 Console.WriteLine();
                 Console.WriteLine("Would you like to play again? (Y/N)");
                 string playAgain = Console.ReadLine();
